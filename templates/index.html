@@ -1,0 +1,389 @@
+{% extends 'base.html' %}
+
+{% block title %}Главная - AI Quiz Generator{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <!-- Hero Section -->
+    <div class="text-center py-12">
+        <div class="inline-block mb-6">
+            <div class="text-8xl mb-4 animate-bounce-slow">🧠</div>
+        </div>
+        <h1 class="text-6xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent mb-6 animate-fade-in">
+            AI Quiz Generator
+        </h1>
+        <p class="text-2xl text-gray-700 mb-8 animate-slide-up">
+            Создавайте персонализированные тесты с помощью искусственного интеллекта
+        </p>
+        <div class="flex justify-center space-x-4 text-sm text-gray-500">
+            <span class="flex items-center space-x-1">
+                <span class="w-2 h-2 bg-accent rounded-full animate-pulse-slow"></span>
+                <span>AI-генерация</span>
+            </span>
+            <span class="flex items-center space-x-1">
+                <span class="w-2 h-2 bg-primary rounded-full animate-pulse-slow"></span>
+                <span>Файлы PDF/Word</span>
+            </span>
+            <span class="flex items-center space-x-1">
+                <span class="w-2 h-2 bg-secondary rounded-full animate-pulse-slow"></span>
+                <span>Публикация</span>
+            </span>
+        </div>
+    </div>
+
+    <!-- Quiz Creation Form -->
+    <div class="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl p-8 mb-8 card-hover">
+        <h2 class="text-2xl font-semibold text-gray-900 mb-6">
+            Создать новый тест
+        </h2>
+        
+        <form id="quizForm" class="space-y-6">
+            {% csrf_token %}
+            
+            <!-- Переключатель между текстом и файлом -->
+            <div class="flex space-x-4 mb-6">
+                <button type="button" id="textMode" class="px-4 py-2 bg-primary text-white rounded-lg font-medium">
+                    Текстовая тема
+                </button>
+                <button type="button" id="fileMode" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg font-medium">
+                    Загрузить файл
+                </button>
+            </div>
+            
+            <!-- Текстовый режим -->
+            <div id="textInputSection">
+                <div>
+                    <label for="topic" class="block text-sm font-medium text-gray-700 mb-2">
+                        Введите тему теста
+                    </label>
+                    <input 
+                        type="text" 
+                        id="topic" 
+                        name="topic" 
+                        placeholder="Например: История России, Математика, Программирование..."
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                    >
+                </div>
+            </div>
+            
+            <!-- Режим загрузки файла -->
+            <div id="fileInputSection" class="hidden">
+                <div>
+                    <label for="fileInput" class="block text-sm font-medium text-gray-700 mb-2">
+                        Загрузите PDF или Word документ
+                    </label>
+                    <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-primary transition-colors">
+                        <input 
+                            type="file" 
+                            id="fileInput" 
+                            name="fileInput" 
+                            accept=".pdf,.doc,.docx"
+                            class="hidden"
+                        >
+                        <div id="fileDropZone" class="cursor-pointer">
+                            <div class="text-gray-500 mb-2">
+                                <svg class="mx-auto h-12 w-12" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                                    <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                </svg>
+                            </div>
+                            <p class="text-sm text-gray-600">
+                                Нажмите для выбора файла или перетащите сюда
+                            </p>
+                            <p class="text-xs text-gray-500 mt-1">
+                                Поддерживаются PDF и Word документы (макс. 10MB)
+                            </p>
+                        </div>
+                        <div id="fileInfo" class="hidden mt-4">
+                            <div class="flex items-center justify-center space-x-2">
+                                <svg class="h-5 w-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                                </svg>
+                                <span id="fileName" class="text-sm text-gray-700"></span>
+                                <button type="button" id="removeFile" class="text-red-500 hover:text-red-700">
+                                    <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div>
+                <label for="questionCount" class="block text-sm font-medium text-gray-700 mb-2">
+                    Количество вопросов
+                </label>
+                <div class="flex space-x-2">
+                    <select 
+                        id="questionCountSelect" 
+                        name="questionCountSelect"
+                        class="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                    >
+                        <option value="3">3 вопроса</option>
+                        <option value="5" selected>5 вопросов</option>
+                        <option value="10">10 вопросов</option>
+                        <option value="15">15 вопросов</option>
+                        <option value="20">20 вопросов</option>
+                        <option value="custom">Другое количество</option>
+                    </select>
+                    <input 
+                        type="number" 
+                        id="questionCount" 
+                        name="questionCount"
+                        value="5"
+                        min="1" 
+                        max="50"
+                        placeholder="Количество"
+                        class="w-32 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                        style="display: none;"
+                    >
+                </div>
+                <p class="text-xs text-gray-500 mt-1">Можно выбрать от 1 до 50 вопросов</p>
+            </div>
+            
+            <button 
+                type="submit" 
+                id="generateBtn"
+                class="w-full bg-gradient-to-r from-primary to-secondary hover:from-secondary hover:to-primary text-white font-semibold py-4 px-6 rounded-xl transition-all duration-300 flex items-center justify-center shadow-lg hover:shadow-xl transform hover:-translate-y-1"
+            >
+                <span id="btnText" class="flex items-center space-x-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                    </svg>
+                    <span>Создать тест</span>
+                </span>
+                <div id="loadingSpinner" class="hidden ml-2">
+                    <div class="loading-spinner"></div>
+                </div>
+            </button>
+        </form>
+    </div>
+
+    <!-- Features Section -->
+    <div class="grid md:grid-cols-3 gap-6 mb-8">
+        <div class="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl p-6 text-center card-hover">
+            <div class="text-5xl mb-4 animate-bounce-slow">🤖</div>
+            <h3 class="text-xl font-semibold text-gray-900 mb-2">AI-Генерация</h3>
+            <p class="text-gray-600">Используйте мощь AI для создания качественных тестов</p>
+        </div>
+        
+        <div class="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl p-6 text-center card-hover">
+            <div class="text-5xl mb-4 animate-bounce-slow">⚡</div>
+            <h3 class="text-xl font-semibold text-gray-900 mb-2">Быстро</h3>
+            <p class="text-gray-600">Создавайте тесты за секунды, а не часы</p>
+        </div>
+        
+        <div class="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl p-6 text-center card-hover">
+            <div class="text-5xl mb-4 animate-bounce-slow">📊</div>
+            <h3 class="text-xl font-semibold text-gray-900 mb-2">Аналитика</h3>
+            <p class="text-gray-600">Отслеживайте результаты и прогресс</p>
+        </div>
+    </div>
+
+    <!-- Recent Quizzes (if user is authenticated) -->
+    {% if user.is_authenticated %}
+        <div class="bg-white rounded-lg shadow-lg p-8">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-semibold text-gray-900">
+                    Мои недавние тесты
+                </h2>
+                <a href="{% url 'my_quizzes' %}" class="text-primary hover:text-secondary font-medium">
+                    Посмотреть все →
+                </a>
+            </div>
+            
+            <div id="recentQuizzes" class="space-y-4">
+                <!-- Recent quizzes will be loaded here -->
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Переключение между режимами
+document.getElementById('textMode').addEventListener('click', function() {
+    document.getElementById('textInputSection').classList.remove('hidden');
+    document.getElementById('fileInputSection').classList.add('hidden');
+    document.getElementById('textMode').classList.remove('bg-gray-200', 'text-gray-700');
+    document.getElementById('textMode').classList.add('bg-primary', 'text-white');
+    document.getElementById('fileMode').classList.remove('bg-primary', 'text-white');
+    document.getElementById('fileMode').classList.add('bg-gray-200', 'text-gray-700');
+});
+
+document.getElementById('fileMode').addEventListener('click', function() {
+    document.getElementById('textInputSection').classList.add('hidden');
+    document.getElementById('fileInputSection').classList.remove('hidden');
+    document.getElementById('fileMode').classList.remove('bg-gray-200', 'text-gray-700');
+    document.getElementById('fileMode').classList.add('bg-primary', 'text-white');
+    document.getElementById('textMode').classList.remove('bg-primary', 'text-white');
+    document.getElementById('textMode').classList.add('bg-gray-200', 'text-gray-700');
+});
+
+// Обработка загрузки файлов
+const fileInput = document.getElementById('fileInput');
+const fileDropZone = document.getElementById('fileDropZone');
+const fileInfo = document.getElementById('fileInfo');
+const fileName = document.getElementById('fileName');
+const removeFile = document.getElementById('removeFile');
+
+fileDropZone.addEventListener('click', () => fileInput.click());
+fileInput.addEventListener('change', handleFileSelect);
+removeFile.addEventListener('click', clearFile);
+
+// Drag and drop
+fileDropZone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    fileDropZone.classList.add('border-primary', 'bg-blue-50');
+});
+
+fileDropZone.addEventListener('dragleave', (e) => {
+    e.preventDefault();
+    fileDropZone.classList.remove('border-primary', 'bg-blue-50');
+});
+
+fileDropZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    fileDropZone.classList.remove('border-primary', 'bg-blue-50');
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+        fileInput.files = files;
+        handleFileSelect();
+    }
+});
+
+function handleFileSelect() {
+    const file = fileInput.files[0];
+    if (file) {
+        // Проверяем размер файла (10MB)
+        if (file.size > 10 * 1024 * 1024) {
+            alert('Файл слишком большой. Максимальный размер: 10MB');
+            clearFile();
+            return;
+        }
+        
+        // Проверяем тип файла
+        const allowedTypes = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/msword'];
+        if (!allowedTypes.includes(file.type)) {
+            alert('Неподдерживаемый тип файла. Поддерживаются только PDF и Word документы.');
+            clearFile();
+            return;
+        }
+        
+        fileName.textContent = file.name;
+        fileDropZone.classList.add('hidden');
+        fileInfo.classList.remove('hidden');
+    }
+}
+
+function clearFile() {
+    fileInput.value = '';
+    fileDropZone.classList.remove('hidden');
+    fileInfo.classList.add('hidden');
+}
+
+// Обработка выбора количества вопросов
+document.getElementById('questionCountSelect').addEventListener('change', function() {
+    const customInput = document.getElementById('questionCount');
+    if (this.value === 'custom') {
+        customInput.style.display = 'block';
+        customInput.focus();
+    } else {
+        customInput.style.display = 'none';
+        document.getElementById('questionCount').value = this.value;
+    }
+});
+
+document.getElementById('questionCount').addEventListener('input', function() {
+    document.getElementById('questionCountSelect').value = 'custom';
+});
+
+document.getElementById('quizForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const topic = document.getElementById('topic').value.trim();
+    const questionCountSelect = document.getElementById('questionCountSelect').value;
+    const questionCount = questionCountSelect === 'custom' ? 
+        document.getElementById('questionCount').value : questionCountSelect;
+    const fileInput = document.getElementById('fileInput');
+    const isFileMode = !document.getElementById('fileInputSection').classList.contains('hidden');
+    
+    if (!isFileMode && !topic) {
+        alert('Пожалуйста, введите тему теста');
+        return;
+    }
+    
+    if (isFileMode && !fileInput.files[0]) {
+        alert('Пожалуйста, выберите файл');
+        return;
+    }
+    
+    if (!questionCount || questionCount < 1 || questionCount > 50) {
+        alert('Пожалуйста, выберите количество вопросов от 1 до 50');
+        return;
+    }
+    
+    const btn = document.getElementById('generateBtn');
+    const btnText = document.getElementById('btnText');
+    const spinner = document.getElementById('loadingSpinner');
+    
+    // Show loading state
+    btn.disabled = true;
+    btnText.textContent = 'Создаем тест...';
+    spinner.classList.remove('hidden');
+    
+    try {
+        let requestData;
+        
+        if (isFileMode) {
+            // Отправляем файл
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+            formData.append('questionCount', questionCount);
+            formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+            
+            const response = await fetch('/api/generate_quiz_from_file/', {
+                method: 'POST',
+                body: formData
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                window.location.href = data.redirect_url;
+            } else {
+                alert('Ошибка: ' + data.error);
+            }
+        } else {
+            // Отправляем текстовую тему
+            const response = await fetch('/api/generate_quiz/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                },
+                body: JSON.stringify({ topic: topic, questionCount: parseInt(questionCount) })
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                window.location.href = data.redirect_url;
+            } else {
+                alert('Ошибка: ' + data.error);
+            }
+        }
+    } catch (error) {
+        alert('Произошла ошибка при создании теста');
+        console.error('Error:', error);
+    } finally {
+        // Reset button state
+        btn.disabled = false;
+        btnText.textContent = 'Создать тест';
+        spinner.classList.add('hidden');
+    }
+});
+</script>
+{% endblock %}

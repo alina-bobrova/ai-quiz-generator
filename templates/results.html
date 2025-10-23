@@ -1,0 +1,127 @@
+{% extends 'base.html' %}
+{% load quiz_extras %}
+
+{% block title %}Результаты - {{ quiz.title }}{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <!-- Results Header -->
+    <div class="bg-white rounded-lg shadow-lg p-8 mb-6 text-center">
+        <h1 class="text-3xl font-bold text-gray-900 mb-4">Результаты теста</h1>
+        <h2 class="text-xl text-gray-600 mb-6">{{ quiz.title }}</h2>
+        
+        <!-- Score Display -->
+        <div class="bg-gradient-to-r from-primary to-secondary rounded-full w-32 h-32 mx-auto mb-6 flex items-center justify-center">
+            <div class="text-white text-3xl font-bold">
+                {% if quiz.score is not None %}
+                    {{ quiz.score|floatformat:0 }}%
+                {% else %}
+                    N/A
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Score Description -->
+        <div class="text-lg text-gray-600">
+            {% if quiz.score is not None %}
+                {% if quiz.score >= 80 %}
+                    <span class="text-green-600 font-semibold">Отлично! 🎉</span>
+                {% elif quiz.score >= 60 %}
+                    <span class="text-yellow-600 font-semibold">Хорошо! 👍</span>
+                {% else %}
+                    <span class="text-red-600 font-semibold">Попробуйте еще раз! 💪</span>
+                {% endif %}
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Detailed Results -->
+    <div class="space-y-6">
+        {% for question in questions %}
+        <div class="bg-white rounded-lg shadow-lg p-6">
+            <div class="mb-4">
+                <h3 class="text-lg font-semibold text-gray-900 mb-2">
+                    Вопрос {{ forloop.counter }}
+                </h3>
+                <p class="text-gray-700">{{ question.text }}</p>
+            </div>
+            
+            <div class="space-y-2">
+                {% for answer in question.answers.all %}
+                    {% with user_answer=user_answers|get_item:question.id %}
+                        {% if user_answer %}
+                            {% with selected_answer=user_answer.answer.id %}
+                            <div class="flex items-center p-3 rounded-lg {% if answer.is_correct %}bg-green-50 border border-green-200{% elif selected_answer == answer.id %}bg-red-50 border border-red-200{% else %}bg-gray-50 border border-gray-200{% endif %}">
+                                <div class="flex-shrink-0 mr-3">
+                                    {% if answer.is_correct %}
+                                        <span class="text-green-600 font-bold">✓</span>
+                                    {% elif selected_answer == answer.id %}
+                                        <span class="text-red-600 font-bold">✗</span>
+                                    {% else %}
+                                        <span class="text-gray-400">○</span>
+                                    {% endif %}
+                                </div>
+                                <span class="{% if answer.is_correct %}text-green-800 font-semibold{% elif selected_answer == answer.id %}text-red-800 font-semibold{% else %}text-gray-700{% endif %}">
+                                    {{ answer.text }}
+                                </span>
+                                {% if answer.is_correct %}
+                                    <span class="ml-auto text-green-600 font-semibold">Правильный ответ</span>
+                                {% elif selected_answer == answer.id %}
+                                    <span class="ml-auto text-red-600 font-semibold">Ваш ответ</span>
+                                {% endif %}
+                            </div>
+                            {% endwith %}
+                        {% else %}
+                            <div class="flex items-center p-3 rounded-lg {% if answer.is_correct %}bg-green-50 border border-green-200{% else %}bg-gray-50 border border-gray-200{% endif %}">
+                                <div class="flex-shrink-0 mr-3">
+                                    {% if answer.is_correct %}
+                                        <span class="text-green-600 font-bold">✓</span>
+                                    {% else %}
+                                        <span class="text-gray-400">○</span>
+                                    {% endif %}
+                                </div>
+                                <span class="{% if answer.is_correct %}text-green-800 font-semibold{% else %}text-gray-700{% endif %}">
+                                    {{ answer.text }}
+                                </span>
+                                {% if answer.is_correct %}
+                                    <span class="ml-auto text-green-600 font-semibold">Правильный ответ</span>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                    {% endwith %}
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="bg-white rounded-lg shadow-lg p-6 mt-8">
+        <div class="flex flex-col sm:flex-row gap-4">
+            <a 
+                href="{% url 'quiz_detail' quiz.id %}" 
+                class="flex-1 bg-primary hover:bg-secondary text-white font-semibold py-3 px-6 rounded-lg text-center transition duration-200"
+            >
+                Пройти тест снова
+            </a>
+            <a 
+                href="{% url 'index' %}" 
+                class="flex-1 bg-gray-500 hover:bg-gray-600 text-white font-semibold py-3 px-6 rounded-lg text-center transition duration-200"
+            >
+                Создать новый тест
+            </a>
+            {% if user.is_authenticated %}
+            <a 
+                href="{% url 'my_quizzes' %}" 
+                class="flex-1 bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-6 rounded-lg text-center transition duration-200"
+            >
+                Мои тесты
+            </a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{% endblock %}

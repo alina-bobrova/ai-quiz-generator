@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ quiz.title }} - AI Quiz Generator{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <!-- Quiz Header -->
+    <div class="bg-white rounded-lg shadow-lg p-8 mb-6">
+        <h1 class="text-3xl font-bold text-gray-900 mb-2">{{ quiz.title }}</h1>
+        <div class="flex items-center justify-between">
+            <p class="text-gray-600">Вопросов: {{ questions.count }}</p>
+            <div class="text-sm text-gray-500">
+                <span id="currentQuestion">1</span> из {{ questions.count }}
+            </div>
+        </div>
+    </div>
+
+    <!-- Quiz Form -->
+    <form method="post" class="space-y-8">
+        {% csrf_token %}
+        
+        {% for question in questions %}
+        <div class="question-container bg-white rounded-lg shadow-lg p-6">
+            <div class="mb-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-2">
+                    Вопрос {{ forloop.counter }}
+                </h3>
+                <p class="text-gray-700 text-lg">{{ question.text }}</p>
+            </div>
+            
+            <div class="space-y-3">
+                {% for answer in question.answers.all %}
+                <label class="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition duration-200">
+                    <input 
+                        type="radio" 
+                        name="question_{{ question.id }}" 
+                        value="{{ answer.id }}"
+                        class="h-4 w-4 text-primary focus:ring-primary border-gray-300"
+                        required
+                    >
+                    <span class="ml-3 text-gray-700">{{ answer.text }}</span>
+                </label>
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+        
+        <!-- Submit Button -->
+        <div class="bg-white rounded-lg shadow-lg p-6">
+            <button 
+                type="submit" 
+                class="w-full bg-primary hover:bg-secondary text-white font-semibold py-3 px-6 rounded-lg transition duration-200"
+            >
+                Завершить тест
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Обновление прогресса при прокрутке
+document.addEventListener('DOMContentLoaded', function() {
+    const questions = document.querySelectorAll('.question-container');
+    const currentQuestionSpan = document.getElementById('currentQuestion');
+    
+    function updateProgress() {
+        const scrollTop = window.pageYOffset;
+        let currentQuestion = 1;
+        
+        questions.forEach((question, index) => {
+            const questionTop = question.offsetTop - 200; // 200px offset
+            if (scrollTop >= questionTop) {
+                currentQuestion = index + 1;
+            }
+        });
+        
+        currentQuestionSpan.textContent = currentQuestion;
+    }
+    
+    // Обновляем прогресс при прокрутке
+    window.addEventListener('scroll', updateProgress);
+    
+    // Обновляем прогресс при загрузке
+    updateProgress();
+});
+</script>
+{% endblock %}

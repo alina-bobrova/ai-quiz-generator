@@ -1,0 +1,159 @@
+{% extends 'base.html' %}
+
+{% block title %}Мои тесты - AI Quiz Generator{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto">
+    {% csrf_token %}
+    <!-- Header -->
+    <div class="bg-white rounded-lg shadow-lg p-8 mb-6">
+        <div class="flex justify-between items-center">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900 mb-2">Мои тесты</h1>
+                <p class="text-gray-600">Управляйте созданными тестами</p>
+            </div>
+            <a 
+                href="{% url 'index' %}" 
+                class="bg-primary hover:bg-secondary text-white font-semibold py-3 px-6 rounded-lg transition duration-200"
+            >
+                Создать новый тест
+            </a>
+        </div>
+    </div>
+
+    <!-- Quizzes List -->
+    {% if quizzes %}
+        <div class="grid gap-6">
+            {% for quiz in quizzes %}
+            <div class="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition duration-200">
+                <div class="flex justify-between items-start">
+                    <div class="flex-1">
+                        <h3 class="text-xl font-semibold text-gray-900 mb-2">{{ quiz.title }}</h3>
+                        <div class="flex items-center space-x-4 text-sm text-gray-500 mb-4">
+                            <span>📅 {{ quiz.created_at|date:"d.m.Y H:i" }}</span>
+                            <span>❓ {{ quiz.questions.count }} вопросов</span>
+                            {% if quiz.score is not None %}
+                                <span class="{% if quiz.score >= 80 %}text-green-600{% elif quiz.score >= 60 %}text-yellow-600{% else %}text-red-600{% endif %} font-semibold">
+                                    🎯 {{ quiz.score|floatformat:0 }}%
+                                </span>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="flex flex-wrap gap-2">
+                            <a 
+                                href="{% url 'quiz_detail' quiz.id %}" 
+                                class="bg-primary hover:bg-secondary text-white px-4 py-2 rounded-lg text-sm font-medium transition duration-200"
+                            >
+                                Пройти тест
+                            </a>
+                            {% if quiz.score is not None %}
+                            <a 
+                                href="{% url 'quiz_results' quiz.id %}" 
+                                class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition duration-200"
+                            >
+                                Посмотреть результаты
+                            </a>
+                            {% endif %}
+                            <button 
+                                onclick="togglePublic({{ quiz.id }})"
+                                class="{% if quiz.is_public %}bg-red-500 hover:bg-red-600{% else %}bg-accent hover:bg-green-600{% endif %} text-white px-4 py-2 rounded-lg text-sm font-medium transition duration-200"
+                            >
+                                {% if quiz.is_public %}🔒 Сделать приватным{% else %}🌐 Опубликовать{% endif %}
+                            </button>
+                            {% if quiz.is_public %}
+                            <button 
+                                onclick="copyShareLink('{{ quiz.share_code }}')"
+                                class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition duration-200"
+                            >
+                                📋 Копировать ссылку
+                            </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <!-- Quiz Status -->
+                    <div class="text-right">
+                        {% if quiz.score is not None %}
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                                Завершен
+                            </span>
+                        {% else %}
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800">
+                                Не завершен
+                            </span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <!-- Empty State -->
+        <div class="bg-white rounded-lg shadow-lg p-12 text-center">
+            <div class="text-6xl mb-4">📝</div>
+            <h3 class="text-xl font-semibold text-gray-900 mb-2">У вас пока нет тестов</h3>
+            <p class="text-gray-600 mb-6">Создайте свой первый тест с помощью AI</p>
+            <a 
+                href="{% url 'index' %}" 
+                class="bg-primary hover:bg-secondary text-white font-semibold py-3 px-6 rounded-lg transition duration-200"
+            >
+                Создать тест
+            </a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function togglePublic(quizId) {
+    try {
+        const response = await fetch(`/api/quiz/${quizId}/toggle-public/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            // Перезагружаем страницу для обновления интерфейса
+            location.reload();
+        } else {
+            alert('Ошибка: ' + data.error);
+        }
+    } catch (error) {
+        alert('Произошла ошибка при изменении публичности теста');
+        console.error('Error:', error);
+    }
+}
+
+function copyShareLink(shareCode) {
+    const shareUrl = `${window.location.origin}/quiz/shared/${shareCode}/`;
+    
+    navigator.clipboard.writeText(shareUrl).then(() => {
+        // Показываем уведомление
+        const notification = document.createElement('div');
+        notification.className = 'fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg z-50';
+        notification.textContent = 'Ссылка скопирована в буфер обмена!';
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+            notification.remove();
+        }, 3000);
+    }).catch(err => {
+        // Fallback для старых браузеров
+        const textArea = document.createElement('textarea');
+        textArea.value = shareUrl;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+        
+        alert('Ссылка скопирована: ' + shareUrl);
+    });
+}
+</script>
+{% endblock %}

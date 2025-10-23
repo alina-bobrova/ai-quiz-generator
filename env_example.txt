@@ -1,0 +1,11 @@
+# Скопируйте этот файл в .env и заполните значения
+
+# DeepSeek API Key
+# Получите ключ на https://platform.deepseek.com/api_keys
+DEEPSEEK_API_KEY=your_deepseek_api_key_here
+
+# Django Secret Key (для продакшена измените на случайную строку)
+SECRET_KEY=django-insecure-v^&s98&%-9o!7*l$1arqgqzu$(2q3ax5a%dg(*m*3)7ch*lh#t
+
+# Debug mode (для продакшена установите False)
+DEBUG=True

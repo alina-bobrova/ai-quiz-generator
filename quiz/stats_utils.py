@@ -89,28 +89,28 @@ def check_achievement_condition(user, achievement, stats):
     
     if condition == "first_quiz":
         return stats.total_quizzes_created >= 1
+    elif condition == "quiz_creator":
+        return stats.total_quizzes_created >= 5
     elif condition == "quiz_master":
         return stats.total_quizzes_created >= 10
     elif condition == "perfectionist":
         return stats.average_score >= 90 and stats.total_quizzes_completed >= 5
+    elif condition == "accuracy_king":
+        return stats.get_accuracy_percentage() >= 95 and stats.total_quizzes_completed >= 3
     elif condition == "speed_demon":
         return stats.total_quizzes_completed >= 20
+    elif condition == "dedicated_learner":
+        return stats.total_quizzes_completed >= 50
     elif condition == "scholar":
         return stats.total_questions_answered >= 100
+    elif condition == "question_master":
+        return stats.total_questions_answered >= 500
     elif condition == "genius":
         return stats.average_score >= 95 and stats.total_quizzes_completed >= 10
     elif condition == "points_collector":
         return stats.total_points >= 500
     elif condition == "points_master":
         return stats.total_points >= 1000
-    elif condition == "accuracy_king":
-        return stats.get_accuracy_percentage() >= 95 and stats.total_quizzes_completed >= 3
-    elif condition == "quiz_creator":
-        return stats.total_quizzes_created >= 5
-    elif condition == "dedicated_learner":
-        return stats.total_quizzes_completed >= 50
-    elif condition == "question_master":
-        return stats.total_questions_answered >= 500
     
     return False
 
@@ -150,6 +150,57 @@ def sync_user_stats(user):
     average_score = sum(completed_quiz_scores) / len(completed_quiz_scores) if completed_quiz_scores else 0
     
     # Пересчитываем очки на основе всех завершенных тестов
+    total_points = 0
+    for quiz in Quiz.objects.filter(user=user, score__isnull=False):
+        quiz_answers = UserAnswer.objects.filter(user=user, question__quiz=quiz)
+        quiz_questions = quiz_answers.count()
+        quiz_correct = quiz_answers.filter(is_correct=True).count()
+        total_points += calculate_quiz_points(quiz.score, quiz_questions, quiz_correct)
+    
+    # Обновляем статистику
+    stats.total_quizzes_created = created_quizzes
+    stats.total_quizzes_completed = completed_quizzes
+    stats.total_questions_answered = total_questions_answered
+    stats.total_correct_answers = total_correct_answers
+    stats.average_score = average_score
+    stats.total_points = total_points
+    stats.save()
+    
+    return stats
+
+
+def force_check_all_achievements(user):
+    """Принудительно проверяет все достижения для пользователя"""
+    stats = get_or_create_user_stats(user)
+    achievements = Achievement.objects.all()
+    
+    for achievement in achievements:
+        if not UserAchievement.objects.filter(user=user, achievement=achievement).exists():
+            if check_achievement_condition(user, achievement, stats):
+                UserAchievement.objects.create(user=user, achievement=achievement)
+                stats.total_points += achievement.points
+                stats.save()
+                print(f"Разблокировано достижение: {achievement.name}")
+
+
+def update_stats_after_quiz_deletion(user):
+    """Обновляет статистику после удаления теста"""
+    stats = get_or_create_user_stats(user)
+    
+    # Пересчитываем статистику
+    from .models import Quiz, UserAnswer
+    created_quizzes = Quiz.objects.filter(user=user).count()
+    completed_quizzes = Quiz.objects.filter(user=user, score__isnull=False).count()
+    
+    user_answers = UserAnswer.objects.filter(user=user)
+    total_questions_answered = user_answers.count()
+    total_correct_answers = user_answers.filter(is_correct=True).count()
+    
+    # Вычисляем средний балл
+    completed_quiz_scores = Quiz.objects.filter(user=user, score__isnull=False).values_list('score', flat=True)
+    average_score = sum(completed_quiz_scores) / len(completed_quiz_scores) if completed_quiz_scores else 0
+    
+    # Пересчитываем очки
     total_points = 0
     for quiz in Quiz.objects.filter(user=user, score__isnull=False):
         quiz_answers = UserAnswer.objects.filter(user=user, question__quiz=quiz)

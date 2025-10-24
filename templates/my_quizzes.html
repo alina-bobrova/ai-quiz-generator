@@ -68,6 +68,12 @@
                                 📋 Копировать ссылку
                             </button>
                             {% endif %}
+                            <button 
+                                onclick="deleteQuiz({{ quiz.id }}, '{{ quiz.title }}')"
+                                class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition duration-200"
+                            >
+                                🗑️ Удалить
+                            </button>
                         </div>
                     </div>
                     
@@ -154,6 +160,47 @@ function copyShareLink(shareCode) {
         
         alert('Ссылка скопирована: ' + shareUrl);
     });
+}
+
+async function deleteQuiz(quizId, quizTitle) {
+    // Подтверждение удаления
+    if (!confirm(`Вы уверены, что хотите удалить тест "${quizTitle}"?\n\nЭто действие нельзя отменить!`)) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/api/quiz/${quizId}/delete/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            // Показываем уведомление об успехе
+            const notification = document.createElement('div');
+            notification.className = 'fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg z-50';
+            notification.textContent = 'Тест успешно удален!';
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+            
+            // Перезагружаем страницу
+            setTimeout(() => {
+                location.reload();
+            }, 1000);
+        } else {
+            alert('Ошибка: ' + data.error);
+        }
+    } catch (error) {
+        alert('Произошла ошибка при удалении теста');
+        console.error('Error:', error);
+    }
 }
 </script>
 {% endblock %}

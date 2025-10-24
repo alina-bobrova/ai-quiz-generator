@@ -14,7 +14,7 @@ from django.conf import settings
 from .models import Quiz, Question, Answer, UserAnswer, UserStats, Achievement, UserAchievement
 from .file_utils import process_uploaded_file, clean_text_for_ai
 from .forms import UserProfileForm, CustomPasswordChangeForm
-from .stats_utils import get_or_create_user_stats, update_user_stats, get_user_rank, get_top_users, create_default_achievements, sync_user_stats
+from .stats_utils import get_or_create_user_stats, update_user_stats, get_user_rank, get_top_users, create_default_achievements, sync_user_stats, force_check_all_achievements, update_stats_after_quiz_deletion, check_achievements
 
 
 def generate_share_code():
@@ -467,6 +467,32 @@ def shared_quiz(request, share_code):
 
 
 @login_required
+@require_http_methods(["POST"])
+def delete_quiz(request, quiz_id):
+    """Удаление теста"""
+    try:
+        quiz = get_object_or_404(Quiz, id=quiz_id)
+        
+        # Проверяем права доступа
+        if request.user != quiz.user:
+            return JsonResponse({'error': 'Нет прав для удаления этого теста'}, status=403)
+        
+        # Удаляем тест (каскадное удаление удалит все связанные объекты)
+        quiz.delete()
+        
+        # Обновляем статистику пользователя после удаления
+        update_stats_after_quiz_deletion(request.user)
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Тест успешно удален'
+        })
+        
+    except Exception as e:
+        return JsonResponse({'error': f'Ошибка при удалении теста: {str(e)}'}, status=500)
+
+
+@login_required
 def profile_view(request):
     """Страница профиля пользователя"""
     if request.method == 'POST':
@@ -480,6 +506,9 @@ def profile_view(request):
     
     # Синхронизируем статистику пользователя
     stats = sync_user_stats(request.user)
+    
+    # Принудительно проверяем все достижения
+    force_check_all_achievements(request.user)
     
     user_achievements = UserAchievement.objects.filter(user=request.user).order_by('-unlocked_at')
     user_rank = get_user_rank(request.user)

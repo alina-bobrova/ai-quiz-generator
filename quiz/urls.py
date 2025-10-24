@@ -10,6 +10,7 @@ urlpatterns = [
     path('api/generate_quiz/', views.generate_quiz, name='generate_quiz'),
     path('api/generate_quiz_from_file/', views.generate_quiz_from_file, name='generate_quiz_from_file'),
     path('api/quiz/<int:quiz_id>/toggle-public/', views.toggle_quiz_public, name='toggle_quiz_public'),
+    path('api/quiz/<int:quiz_id>/delete/', views.delete_quiz, name='delete_quiz'),
     path('profile/', views.profile_view, name='profile'),
     path('profile/change-password/', views.change_password_view, name='change_password'),
     path('register/', views.register_view, name='register'),
